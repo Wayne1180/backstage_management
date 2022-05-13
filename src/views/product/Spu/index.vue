@@ -32,6 +32,7 @@
                 icon="el-icon-plus"
                 size="mini"
                 title="添加spu"
+                @click="addSku(row)"
               ></hint-button>
               <hint-button
                 type="warning"
@@ -45,6 +46,7 @@
                 icon="el-icon-info"
                 size="mini"
                 title="查看当前spu全部sku列表"
+                @click="handler(row)"
               ></hint-button>
               <el-popconfirm
                 title="这是一段内容确定删除吗？"
@@ -79,8 +81,36 @@
         @changeScene="changeScene"
         ref="spu"
       ></SpuForm>
-      <SkuForm v-show="scene == 2"></SkuForm>
+      <SkuForm
+        v-show="scene == 2"
+        ref="sku"
+        @changeScenes="changeScenes"
+      ></SkuForm>
     </el-card>
+    <el-dialog
+      :title="`${spu.spuName}的sku列表`"
+      :visible.sync="dialogTableVisible"
+      :before-close="close"
+    >
+      <!-- table展示sku的列表 -->
+      <el-table :data="skuList" style="width: 100%" border v-loading="loading">
+        <el-table-column prop="skuName" label="名称" width="width">
+        </el-table-column>
+        <el-table-column prop="price" label="价格" width="width">
+        </el-table-column>
+        <el-table-column prop="weight" label="重量" width="width">
+        </el-table-column>
+        <el-table-column label="默认图片" width="width">
+          <template slot-scope="{ row, $index }">
+            <img
+              :src="row.skuDefaultImg"
+              alt=""
+              style="width: 100px; height: 100px"
+            />
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
@@ -101,6 +131,10 @@ export default {
       records: [], //spu列表的数据
       total: 0, //分页器一共需要展示数据的条数
       scene: 0, //0代表展示SPU列表数据 1 展示添加SPU|修改SPU  2 添加SKU
+      dialogTableVisible: false, //控制对话框的显示与隐藏
+      spu: {},
+      skuList: [], //存储的是sku列表的数据
+      loading: true,
     };
   },
   methods: {
@@ -177,6 +211,39 @@ export default {
         this.$message({ type: "success", message: "删除成功" });
         this.getSpuList(this.records.length > 1 ? this.page : this.page - 1);
       }
+    },
+    //添加sku按钮的回调
+    addSku(row) {
+      this.scene = 2;
+      //父组件调用子组件的方法，让子组件发请求---三个请求
+      this.$refs.sku.getData(this.category1Id, this.category2Id, row);
+    },
+    //skuForm通知父组件修改场景
+    changeScenes(scene) {
+      this.scene = scene;
+    },
+    //查看SKU按钮的回调
+    async handler(spu) {
+      //点击按钮的时候，对话框是可见的
+      this.dialogTableVisible = true;
+      //保存spu信息
+      this.spu = spu;
+      //获取sku列表的数据进行展示
+      let result = await this.$API.spu.reqSkuList(spu.id);
+      if (result.code == 200) {
+        this.skuList = result.data;
+        //loading隐藏
+        this.loading = false;
+      }
+    },
+    //关闭对话框的回调
+    close(done) {
+      //loading属性再次变为真
+      this.loading = true;
+      //清除sku列表的数据
+      this.skuList = [];
+      //关闭对话框
+      done();
     },
   },
   components: {
