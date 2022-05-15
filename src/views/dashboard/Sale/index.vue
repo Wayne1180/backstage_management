@@ -81,6 +81,7 @@
 //引入echarts
 import echarts from "echarts";
 import dayjs from "dayjs";
+import { mapState } from "vuex";
 export default {
   name: "",
   data() {
@@ -114,20 +115,7 @@ export default {
       xAxis: [
         {
           type: "category",
-          data: [
-            "一月",
-            "二月",
-            "三月",
-            "四月",
-            "五月",
-            "六月",
-            "七月",
-            "八月",
-            "九月",
-            "十月",
-            "十一月",
-            "十二月",
-          ],
+          data: [],
           axisTick: {
             alignWithLabel: true,
           },
@@ -143,17 +131,22 @@ export default {
           name: "Direct",
           type: "bar",
           barWidth: "60%",
-          data: [10, 52, 200, 334, 390, 330, 220, 110, 98, 167, 123, 44],
+          data: [],
           color: "yellowgreen",
         },
       ],
     });
+
+    //顶部是mounted
   },
   computed: {
     //计算属性-标题
     title() {
       return this.activeName == "sale" ? "销售额" : "访问量";
     },
+    ...mapState({
+      listState: (state) => state.home.list,
+    }),
   },
   //监听属性
   watch: {
@@ -164,6 +157,66 @@ export default {
         title: {
           text: this.title,
         },
+        xAxis: {
+          data:
+            this.title == "销售额"
+              ? this.listState.orderFullYearAxis
+              : this.listState.userFullYearAxis,
+        },
+        series: [
+          {
+            name: "Direct",
+            type: "bar",
+            barWidth: "60%",
+            data:
+              this.title == "销售额"
+                ? this.listState.orderFullYear
+                : this.listState.userFullYear,
+            color: "yellowgreen",
+          },
+        ],
+      });
+    },
+    listState() {
+      this.mycharts.setOption({
+        title: {
+          text: this.title + "趋势",
+        },
+        tooltip: {
+          trigger: "axis",
+          axisPointer: {
+            type: "shadow",
+          },
+        },
+        grid: {
+          left: "3%",
+          right: "4%",
+          bottom: "3%",
+          containLabel: true,
+        },
+        xAxis: [
+          {
+            type: "category",
+            data: this.listState.orderFullYearAxis,
+            axisTick: {
+              alignWithLabel: true,
+            },
+          },
+        ],
+        yAxis: [
+          {
+            type: "value",
+          },
+        ],
+        series: [
+          {
+            name: "Direct",
+            type: "bar",
+            barWidth: "60%",
+            data: this.listState.orderFullYear,
+            color: "yellowgreen",
+          },
+        ],
       });
     },
   },
